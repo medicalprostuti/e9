@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "He was very angry _ my conduct.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "of",
+            d: "by",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক Preposition হলো 'at'। সাধারণত, যখন কেউ কোনো বিষয় বা ঘটনার কারণে রাগান্বিত হয়, তখন 'angry at' ব্যবহার করা হয়। যেমন: 'He was angry at my conduct' (সে আমার আচরণের প্রতি রাগান্বিত ছিল)।</p><ul><li><b>(A) with:</b> যখন কোনো ব্যক্তির উপর রাগান্বিত হওয়া বোঝায়, তখন 'angry with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'He was angry with me.'</li><li><b>(B) at:</b> কোনো কাজ, আচরণ বা পরিস্থিতির কারণে রাগান্বিত হলে 'angry at' ব্যবহার করা হয়। যেমন: 'He was angry at the delay.'</li><li><b>(C) of:</b> 'of' সাধারণত মালিকানা বা সম্পর্ক বোঝাতে ব্যবহৃত হয়, রাগের ক্ষেত্রে এর ব্যবহার নেই।</li><li><b>(D) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়, রাগের ক্ষেত্রে এর ব্যবহার নেই।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "My house is adjacent _ the mosque.",
+          options: {
+            a: "into",
+            b: "to",
+            c: "onto",
+            d: "unto",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Adjacent' শব্দের অর্থ 'সংলগ্ন' বা 'পাশাপাশি'। এর সাথে সর্বদা 'to' Preposition বসে। অর্থাৎ, 'Adjacent to' মানে 'কোনো কিছুর সংলগ্ন' বা 'কোনো কিছুর পাশে'।</p><ul><li><b>(A) into:</b> 'into' সাধারণত গতি বোঝাতে ব্যবহৃত হয়, যেমন: 'He went into the room.'</li><li><b>(B) to:</b> 'adjacent' শব্দের সাথে 'to' Preposition বসে, যা সংলগ্নতা বা নৈকট্য বোঝায়। উদাহরণস্বরূপ: 'The park is adjacent to the library.'</li><li><b>(C) onto:</b> 'onto' সাধারণত কোনো কিছুর উপর গতি বোঝাতে ব্যবহৃত হয়, যেমন: 'The cat jumped onto the table.'</li><li><b>(D) unto:</b> 'unto' একটি পুরনো শব্দ যা 'to' বা 'until' এর অর্থে ব্যবহৃত হয়, কিন্তু 'adjacent' এর সাথে বসে না।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "He does not adhere _ any principle.",
+          options: {
+            a: "by",
+            b: "in",
+            c: "at",
+            d: "to",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Adhere' শব্দের অর্থ 'কোনো কিছু মেনে চলা' বা 'দৃঢ়ভাবে লেগে থাকা'। 'Adhere' এর সাথে সঠিক Preposition হলো 'to'। 'Adhere to' মানে 'কোনো নীতি, নিয়ম বা বিশ্বাস মেনে চলা'।</p><ul><li><b>(A) by:</b> 'by' সাধারণত কোনো কাজ সম্পন্ন করার মাধ্যম বা কর্তা বোঝাতে ব্যবহৃত হয়, যেমন: 'written by him.'</li><li><b>(B) in:</b> 'in' সাধারণত স্থান বা সময় বোঝাতে ব্যবহৃত হয়, যেমন: 'in the room', 'in the morning.'</li><li><b>(C) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়, যেমন: 'at home', 'at 5 o'clock.'</li><li><b>(D) to:</b> 'adhere' ক্রিয়ার সাথে 'to' Preposition বসে, যা কোনো নীতি, নিয়ম বা বিশ্বাসের প্রতি আনুগত্য বোঝায়। উদাহরণস্বরূপ: 'They must adhere to the rules.'</li></ul>",
+        },
+        {
+          id: 4,
+          question: "I shall not _ the examination this year.",
+          options: {
+            a: "give",
+            b: "appear at",
+            c: "sit",
+            d: "go for",
+          },
+          correct: "b",
+          explanation:
+            "<p>পরীক্ষায় অংশগ্রহণ করা বা পরীক্ষা দেওয়া বোঝাতে 'appear at the examination' অথবা 'sit for the examination' ব্যবহার করা হয়। এখানে 'appear at' সঠিক। 'Give' সাধারণত পরীক্ষা গ্রহণ করা বোঝায়, যেমন: 'The teacher gives the examination.' 'Sit' একা ব্যবহৃত হয় না, 'sit for' ব্যবহৃত হয়। 'Go for' অন্য প্রসঙ্গে ব্যবহৃত হয়।</p><ul><li><b>(A) give:</b> 'give an examination' এর অর্থ হল পরীক্ষা নেওয়া বা পরীক্ষা প্রদান করা। এটি পরীক্ষার আয়োজনকারী বা শিক্ষক করে থাকেন।</li><li><b>(B) appear at:</b> 'appear at an examination' হলো পরীক্ষায় অংশগ্রহণ করা। এটি একজন পরীক্ষার্থীর জন্য সঠিক ব্যবহার।</li><li><b>(C) sit:</b> 'sit' একা ব্যবহৃত হয় না। পরীক্ষায় অংশগ্রহণ করা বোঝাতে 'sit for an examination' ব্যবহৃত হয়।</li><li><b>(D) go for:</b> 'go for' সাধারণত কোনো কিছু অর্জন করার চেষ্টা বা কোনো লক্ষ্য পূরণের জন্য যাওয়া বোঝায়, যেমন: 'go for a walk', 'go for a record.'</li></ul>",
+        },
+        {
+          id: 5,
+          question: "Your conduct admits _ no excuse.",
+          options: {
+            a: "to",
+            b: "for",
+            c: "of",
+            d: "at",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Admit of' একটি Phrasal verb যার অর্থ 'কোনো কিছুর সুযোগ রাখা' বা 'কোনো কিছু সমর্থন করা'। এখানে 'Your conduct admits of no excuse' এর অর্থ হলো 'তোমার আচরণ কোনো অজুহাতের সুযোগ রাখে না' বা 'তোমার আচরণের কোনো অজুহাত গ্রহণযোগ্য নয়'।</p><ul><li><b>(A) to:</b> 'admit to' সাধারণত কোনো কিছু স্বীকার করা বোঝায়, যেমন: 'He admitted to stealing the money.'</li><li><b>(B) for:</b> 'for' সাধারণত কারণ বা উদ্দেশ্য বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) of:</b> 'admit of' হলো একটি Phrasal verb যা কোনো কিছুর সুযোগ বা অবকাশ থাকা বোঝায়।</li><li><b>(D) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "There is no alternative _ training.",
+          options: {
+            a: "to",
+            b: "for",
+            c: "than",
+            d: "of",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Alternative' শব্দের অর্থ 'বিকল্প'। 'Alternative' এর সাথে সবসময় 'to' Preposition বসে। 'Alternative to' মানে 'কোনো কিছুর বিকল্প'।</p><ul><li><b>(A) to:</b> 'alternative' শব্দের সাথে 'to' Preposition বসে, যা বিকল্প বোঝায়। উদাহরণস্বরূপ: 'There is no alternative to hard work.'</li><li><b>(B) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) than:</b> 'than' সাধারণত তুলনা বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) of:</b> 'of' সাধারণত সম্পর্ক বা মালিকানা বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "What are you so angry _?",
+          options: {
+            a: "about",
+            b: "with",
+            c: "who",
+            d: "for",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন কোনো বিষয় বা কারণ সম্পর্কে রাগ বোঝানো হয়, তখন 'angry about' বা 'angry at' ব্যবহার করা হয়। এখানে 'about' সঠিক।</p><ul><li><b>(A) about:</b> কোনো বিষয়, পরিস্থিতি বা ঘটনার কারণে রাগান্বিত হলে 'angry about' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'She was angry about the unfair treatment.'</li><li><b>(B) with:</b> কোনো ব্যক্তির উপর রাগান্বিত হলে 'angry with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'He was angry with his brother.'</li><li><b>(C) who:</b> 'who' একটি Pronoun এবং এটি ব্যক্তির জন্য ব্যবহৃত হয়, Preposition নয়।</li><li><b>(D) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়, তবে এখানে রাগের কারণ বোঝাতে 'about' অধিক উপযোগী।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "The ministers arrived _ a decision last night.",
+          options: {
+            a: "to",
+            b: "on",
+            c: "on",
+            d: "upon",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Arrive at' বা 'Arrive on' যখন কোনো সিদ্ধান্ত বা চুক্তিতে পৌঁছানো বোঝায়, তখন 'arrive at' বা 'arrive on' ব্যবহার করা হয়। এখানে 'on' সঠিক।</p><ul><li><b>(A) to:</b> 'arrive to' সাধারণত স্থান বোঝাতে ব্যবহৃত হয় না, 'arrive at' বা 'arrive in' ব্যবহৃত হয়।</li><li><b>(B) on:</b> যখন কোনো নির্দিষ্ট সিদ্ধান্ত, চুক্তি বা মীমাংসায় পৌঁছানো বোঝায়, তখন 'arrive on' বা 'arrive at' ব্যবহৃত হয়। উদাহরণস্বরূপ: 'They arrived on a consensus.'</li><li><b>(C) on:</b> (পুনরাবৃত্তি)</li><li><b>(D) upon:</b> 'upon' সাধারণত 'on' এর মতোই ব্যবহৃত হয়, তবে এটি একটু বেশি আনুষ্ঠানিক। কোনো সিদ্ধান্তে পৌঁছানোর ক্ষেত্রে 'arrive upon' ব্যবহার করা যেতে পারে, তবে 'arrive on' বা 'arrive at' বেশি প্রচলিত।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "She argued _ me about the marriage.",
+          options: {
+            a: "with",
+            b: "for",
+            c: "to",
+            d: "from",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন কোনো ব্যক্তির সাথে তর্ক করা বোঝায়, তখন 'argue with' ব্যবহার করা হয়।</p><ul><li><b>(A) with:</b> যখন কোনো ব্যক্তির সাথে তর্ক বা মতবিরোধ হয়, তখন 'argue with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'He argued with his parents.'</li><li><b>(B) for:</b> 'argue for' মানে কোনো কিছুর পক্ষে যুক্তি দেওয়া, যেমন: 'He argued for the new policy.'</li><li><b>(C) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়। 'Argue to' সাধারণত ব্যবহৃত হয় না।</li><li><b>(D) from:</b> 'from' সাধারণত উৎস বা বিচ্ছেদ বোঝাতে ব্যবহৃত হয়। 'Argue from' সাধারণত ব্যবহৃত হয় না।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "He has assured me _ safety.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "for",
+            d: "of",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Assure' শব্দের অর্থ 'আশ্বস্ত করা'। 'Assure' এর সাথে 'of' Preposition বসে, যখন কোনো বিষয় সম্পর্কে নিশ্চিত করা বোঝানো হয়। 'Assure someone of something' মানে 'কাউকে কোনো বিষয়ে নিশ্চিত করা'।</p><ul><li><b>(A) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) of:</b> 'assure' ক্রিয়ার সাথে 'of' Preposition বসে, যা কোনো বিষয়ে নিশ্চিত করা বোঝায়। উদাহরণস্বরূপ: 'The doctor assured him of a full recovery.'</li></ul>",
+        },
+        {
+          id: 11,
+          question: "They were really annoyed _ his activities.",
+          options: {
+            a: "at",
+            b: "with",
+            c: "about",
+            d: "for",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন কোনো ব্যক্তি কোনো বিষয় বা ঘটনার কারণে বিরক্ত হয়, তখন 'annoyed at' ব্যবহার করা হয়।</p><ul><li><b>(A) at:</b> যখন কোনো কাজ, আচরণ বা পরিস্থিতির কারণে বিরক্ত হওয়া বোঝায়, তখন 'annoyed at' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'She was annoyed at the noise.'</li><li><b>(B) with:</b> যখন কোনো ব্যক্তির উপর বিরক্ত হওয়া বোঝায়, তখন 'annoyed with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'I was annoyed with him.'</li><li><b>(C) about:</b> 'annoyed about' ও কোনো বিষয় সম্পর্কে বিরক্ত হওয়া বোঝাতে ব্যবহৃত হয়, তবে 'at' বেশি নির্দিষ্ট বা তাৎক্ষণিক রাগের ক্ষেত্রে ব্যবহৃত হয়।</li><li><b>(D) for:</b> 'for' সাধারণত কারণ বা উদ্দেশ্য বোঝাতে ব্যবহৃত হয়, তবে 'annoyed' এর সাথে এর ব্যবহার কম।</li></ul>",
+        },
+        {
+          id: 12,
+          question:
+            "Fill in the gap with appropriate preposition: John was annoyed _ his brother.",
+          options: {
+            a: "at",
+            b: "with",
+            c: "about",
+            d: "for",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন কোনো ব্যক্তির উপর বিরক্ত হওয়া বোঝায়, তখন 'annoyed with' ব্যবহার করা হয়।</p><ul><li><b>(A) at:</b> যখন কোনো কাজ, আচরণ বা পরিস্থিতির কারণে বিরক্ত হওয়া বোঝায়, তখন 'annoyed at' ব্যবহার করা হয়।</li><li><b>(B) with:</b> যখন কোনো ব্যক্তির উপর বিরক্ত হওয়া বোঝায়, তখন 'annoyed with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'He was annoyed with his classmates.'</li><li><b>(C) about:</b> 'annoyed about' কোনো বিষয় সম্পর্কে বিরক্ত হওয়া বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) for:</b> 'for' সাধারণত কারণ বা উদ্দেশ্য বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "I don't know why you were angry _ your friend.",
+          options: {
+            a: "to",
+            b: "by",
+            c: "with",
+            d: "over",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন কোনো ব্যক্তির উপর রাগান্বিত হওয়া বোঝায়, তখন 'angry with' ব্যবহার করা হয়।</p><ul><li><b>(A) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়। 'angry to' ব্যবহৃত হয় না।</li><li><b>(B) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) with:</b> কোনো ব্যক্তির উপর রাগান্বিত হলে 'angry with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'She is angry with her boss.'</li><li><b>(D) over:</b> 'over' কোনো বিষয় নিয়ে রাগ বোঝাতে ব্যবহৃত হতে পারে, তবে ব্যক্তির ক্ষেত্রে 'with' অধিক প্রচলিত। 'Angry over something' (কোনো কিছু নিয়ে রাগ) ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            "He readily agreed _ my proposal to donate to a charity fund.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "to",
+            d: "on",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন কোনো প্রস্তাবে বা পরিকল্পনায় রাজি হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়।</p><ul><li><b>(A) with:</b> যখন কোনো ব্যক্তির সাথে একমত হওয়া বোঝায়, তখন 'agree with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'I agree with you.'</li><li><b>(B) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়, 'agree' এর সাথে ব্যবহৃত হয় না।</li><li><b>(C) to:</b> যখন কোনো প্রস্তাব, পরিকল্পনা বা শর্তে সম্মত হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'They agreed to the terms.'</li><li><b>(D) on:</b> 'agree on' কোনো নির্দিষ্ট বিষয় বা সিদ্ধান্তে একমত হওয়া বোঝায়, যেমন: 'We agreed on a date for the meeting.'</li></ul>",
+        },
+        {
+          id: 15,
+          question: "I don't know why you were angry _ your friend.",
+          options: {
+            a: "to",
+            b: "by",
+            c: "with",
+            d: "over",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন কোনো ব্যক্তির উপর রাগান্বিত হওয়া বোঝায়, তখন 'angry with' ব্যবহার করা হয়।</p><ul><li><b>(A) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়। 'angry to' ব্যবহৃত হয় না।</li><li><b>(B) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) with:</b> কোনো ব্যক্তির উপর রাগান্বিত হলে 'angry with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'She is angry with her boss.'</li><li><b>(D) over:</b> 'over' কোনো বিষয় নিয়ে রাগ বোঝাতে ব্যবহৃত হতে পারে, তবে ব্যক্তির ক্ষেত্রে 'with' অধিক প্রচলিত। 'Angry over something' (কোনো কিছু নিয়ে রাগ) ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 16,
+          question:
+            "He readily agreed _ my proposal to donate to a charity fund.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "to",
+            d: "on",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন কোনো প্রস্তাবে বা পরিকল্পনায় রাজি হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়।</p><ul><li><b>(A) with:</b> যখন কোনো ব্যক্তির সাথে একমত হওয়া বোঝায়, তখন 'agree with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'I agree with you.'</li><li><b>(B) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়, 'agree' এর সাথে ব্যবহৃত হয় না।</li><li><b>(C) to:</b> যখন কোনো প্রস্তাব, পরিকল্পনা বা শর্তে সম্মত হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'They agreed to the terms.'</li><li><b>(D) on:</b> 'agree on' কোনো নির্দিষ্ট বিষয় বা সিদ্ধান্তে একমত হওয়া বোঝায়, যেমন: 'We agreed on a date for the meeting.'</li></ul>",
+        },
+        {
+          id: 17,
+          question: "Professor Kamal is an authority _ Sociology.",
+          options: {
+            a: "of",
+            b: "on",
+            c: "to",
+            d: "for",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Authority on' মানে 'কোনো নির্দিষ্ট বিষয়ে বিশেষজ্ঞ' বা 'কোনো বিষয়ে গভীর জ্ঞানসম্পন্ন ব্যক্তি'।</p><ul><li><b>(A) of:</b> 'authority of' সাধারণত কোনো পদ বা ক্ষমতার অধিকার বোঝাতে ব্যবহৃত হয়, যেমন: 'the authority of the king.'</li><li><b>(B) on:</b> কোনো নির্দিষ্ট বিষয় বা ক্ষেত্রে বিশেষজ্ঞতা বা জ্ঞান বোঝাতে 'authority on' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'She is an authority on ancient history.'</li><li><b>(C) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়। 'authority to' সাধারণত কোনো কাজ করার অনুমতি বা ক্ষমতা বোঝায়, যেমন: 'He has the authority to sign.'</li><li><b>(D) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "I am accustomed _ such a life.",
+          options: {
+            a: "with",
+            b: "by",
+            c: "to",
+            d: "in",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Accustomed' শব্দের অর্থ 'অভ্যস্ত'। 'Accustomed' এর সাথে সর্বদা 'to' Preposition বসে। 'Accustomed to' মানে 'কোনো কিছুর সাথে অভ্যস্ত'।</p><ul><li><b>(A) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়, তবে 'accustomed' এর সাথে বসে না।</li><li><b>(B) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) to:</b> 'accustomed' এর সাথে 'to' Preposition বসে, যা কোনো নির্দিষ্ট অবস্থা বা অভ্যাসের সাথে অভ্যস্ততা বোঝায়। উদাহরণস্বরূপ: 'He is accustomed to hard work.'</li><li><b>(D) in:</b> 'in' সাধারণত স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "I agree _ your suggestion.",
+          options: {
+            a: "at",
+            b: "on",
+            c: "to",
+            d: "about",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন কোনো প্রস্তাবে বা পরিকল্পনায় রাজি হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়।</p><ul><li><b>(A) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়, 'agree' এর সাথে ব্যবহৃত হয় না।</li><li><b>(B) on:</b> 'agree on' কোনো নির্দিষ্ট বিষয় বা সিদ্ধান্তে একমত হওয়া বোঝায়, যেমন: 'We agreed on a date for the meeting.'</li><li><b>(C) to:</b> যখন কোনো প্রস্তাব, পরিকল্পনা বা শর্তে সম্মত হওয়া বোঝায়, তখন 'agree to' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'They agreed to the terms.'</li><li><b>(D) about:</b> 'agree about' কোনো নির্দিষ্ট বিষয় সম্পর্কে একমত হওয়া বোঝায়, তবে 'suggestion' এর ক্ষেত্রে 'to' অধিক উপযোগী।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "My father was angry _ me.",
+          options: {
+            a: "at",
+            b: "with",
+            c: "of",
+            d: "on",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন কোনো ব্যক্তির উপর রাগান্বিত হওয়া বোঝায়, তখন 'angry with' ব্যবহার করা হয়।</p><ul><li><b>(A) at:</b> কোনো কাজ, আচরণ বা পরিস্থিতির কারণে রাগান্বিত হলে 'angry at' ব্যবহার করা হয়।</li><li><b>(B) with:</b> কোনো ব্যক্তির উপর রাগান্বিত হলে 'angry with' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'The teacher was angry with the student.'</li><li><b>(C) of:</b> 'of' সাধারণত মালিকানা বা সম্পর্ক বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) on:</b> 'on' সাধারণত কোনো কিছুর উপর অবস্থান বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 21,
+          question:
+            "Rowshan was admitted _ the 1st year MBBS course in Comilla Medical College.",
+          options: {
+            a: "in",
+            b: "to",
+            c: "of",
+            d: "into",
+          },
+          correct: "d",
+          explanation:
+            "<p>কোনো প্রতিষ্ঠান বা প্রোগ্রামে ভর্তি হওয়া বোঝাতে 'admitted into' বা 'admitted to' ব্যবহার করা হয়। তবে, কোনো নির্দিষ্ট কোর্সের মধ্যে প্রবেশ বোঝাতে 'into' অধিক উপযুক্ত।</p><ul><li><b>(A) in:</b> 'in' সাধারণত কোনো স্থানের মধ্যে অবস্থান বোঝায়, যেমন: 'He is in the college.'</li><li><b>(B) to:</b> 'admitted to' সাধারণত কোনো প্রতিষ্ঠান বা হাসপাতালের ভর্তি বোঝাতে ব্যবহৃত হয়। উদাহরণস্বরূপ: 'He was admitted to the hospital.'</li><li><b>(C) of:</b> 'of' সাধারণত সম্পর্ক বা মালিকানা বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) into:</b> যখন কোনো নতুন অবস্থা, স্থান বা কোর্সের মধ্যে প্রবেশ বোঝায়, তখন 'into' ব্যবহৃত হয়। 'admitted into a course' বলতে কোর্সের মধ্যে প্রবেশাধিকার পাওয়া বোঝায়।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "Can you suggest an alternative _ this proposal?",
+          options: {
+            a: "for",
+            b: "to",
+            c: "with",
+            d: "in",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Alternative' শব্দের অর্থ 'বিকল্প'। 'Alternative' এর সাথে সবসময় 'to' Preposition বসে। 'Alternative to' মানে 'কোনো কিছুর বিকল্প'।</p><ul><li><b>(A) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) to:</b> 'alternative' শব্দের সাথে 'to' Preposition বসে, যা বিকল্প বোঝায়। উদাহরণস্বরূপ: 'Is there an alternative to this method?'</li><li><b>(C) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) in:</b> 'in' সাধারণত স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "He has assured me _ safety.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "for",
+            d: "of",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Assure' শব্দের অর্থ 'আশ্বস্ত করা'। 'Assure' এর সাথে 'of' Preposition বসে, যখন কোনো বিষয় সম্পর্কে নিশ্চিত করা বোঝানো হয়। 'Assure someone of something' মানে 'কাউকে কোনো বিষয়ে নিশ্চিত করা'।</p><ul><li><b>(A) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) of:</b> 'assure' ক্রিয়ার সাথে 'of' Preposition বসে, যা কোনো বিষয়ে নিশ্চিত করা বোঝায়। উদাহরণস্বরূপ: 'The government assured the public of their commitment.'</li></ul>",
+        },
+        {
+          id: 24,
+          question: "Mati is absent _ the class.",
+          options: {
+            a: "from",
+            b: "with",
+            c: "of",
+            d: "into",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Absent' শব্দের অর্থ 'অনুপস্থিত'। 'Absent' এর সাথে সর্বদা 'from' Preposition বসে। 'Absent from' মানে 'কোনো স্থান বা কাজ থেকে অনুপস্থিত'।</p><ul><li><b>(A) from:</b> 'absent from' মানে কোনো স্থান বা ঘটনা থেকে দূরে থাকা বা অনুপস্থিত থাকা। উদাহরণস্বরূপ: 'He was absent from work.'</li><li><b>(B) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) of:</b> 'of' সাধারণত সম্পর্ক বা মালিকানা বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) into:</b> 'into' সাধারণত গতি বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "He is afraid _ the dog.",
+          options: {
+            a: "with",
+            b: "at",
+            c: "of",
+            d: "by",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Afraid' শব্দের অর্থ 'ভয় পাওয়া'। 'Afraid' এর সাথে সর্বদা 'of' Preposition বসে। 'Afraid of' মানে 'কোনো কিছুকে ভয় পাওয়া'।</p><ul><li><b>(A) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) of:</b> 'afraid' এর সাথে 'of' Preposition বসে, যা কোনো কিছুর প্রতি ভয় বোঝায়। উদাহরণস্বরূপ: 'She is afraid of heights.'</li><li><b>(D) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 26,
+          question:
+            '"He took advantage _ my absence to steal my book" fill up the gap above with the appropriate preposition below-',
+          options: {
+            a: "for",
+            b: "of",
+            c: "on",
+            d: "to",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Take advantage of' একটি Phrasal verb যার অর্থ 'সুযোগ নেওয়া' বা 'ফায়দা লোটা'। এটি প্রায়শই নেতিবাচক অর্থে ব্যবহৃত হয়, অর্থাৎ কারো দুর্বলতা বা অনুপস্থিতির সুযোগ নেওয়া।</p><ul><li><b>(A) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়। 'take advantage for' সাধারণত ব্যবহৃত হয় না।</li><li><b>(B) of:</b> 'take advantage of' মানে কোনো সুযোগের সদ্ব্যবহার করা বা কোনো পরিস্থিতি থেকে লাভবান হওয়া। উদাহরণস্বরূপ: 'He took advantage of the good weather to go for a walk.'</li><li><b>(C) on:</b> 'on' সাধারণত কোনো কিছুর উপর অবস্থান বোঝাতে ব্যবহৃত হয়।</li><li><b>(D) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 27,
+          question:
+            'Choose the correct word for the blank "They are not accustomed _ such a life style?',
+          options: {
+            a: "by",
+            b: "with",
+            c: "to",
+            d: "for",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Accustomed' শব্দের অর্থ 'অভ্যস্ত'। 'Accustomed' এর সাথে সর্বদা 'to' Preposition বসে। 'Accustomed to' মানে 'কোনো কিছুর সাথে অভ্যস্ত'।</p><ul><li><b>(A) by:</b> 'by' সাধারণত কর্মের কর্তা বা মাধ্যম বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) with:</b> 'with' সাধারণত সঙ্গ বা সরঞ্জাম বোঝাতে ব্যবহৃত হয়, তবে 'accustomed' এর সাথে বসে না।</li><li><b>(C) to:</b> 'accustomed' এর সাথে 'to' Preposition বসে, যা কোনো নির্দিষ্ট অবস্থা বা অভ্যাসের সাথে অভ্যস্ততা বোঝায়। উদাহরণস্বরূপ: 'She is accustomed to working late.'</li><li><b>(D) for:</b> 'for' সাধারণত উদ্দেশ্য বা কারণ বোঝাতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 28,
+          question:
+            'Fill up the blank with appropriate preposition, "He has great ambition _ fame."',
+          options: {
+            a: "in",
+            b: "to",
+            c: "for",
+            d: "of",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Ambition' শব্দের অর্থ 'আকাঙ্ক্ষা' বা 'উচ্চাকাঙ্ক্ষা'। যখন কোনো কিছু অর্জনের জন্য তীব্র আকাঙ্ক্ষা বোঝায়, তখন 'ambition of' বা 'ambition for' ব্যবহৃত হয়। 'Ambition of' সাধারণত কোনো নির্দিষ্ট লক্ষ্য বা ফলাফলের আকাঙ্ক্ষা বোঝায়। 'Ambition for' সাধারণত কোনো নির্দিষ্ট বিষয় বা অবস্থানের আকাঙ্ক্ষা বোঝায়। এক্ষেত্রে 'of' অধিক উপযুক্ত।</p><ul><li><b>(A) in:</b> 'in' সাধারণত স্থান বা সময় বোঝাতে ব্যবহৃত হয়।</li><li><b>(B) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) for:</b> 'ambition for' কোনো লক্ষ্য বা প্রাপ্তির আকাঙ্ক্ষা বোঝাতে ব্যবহৃত হয়, যেমন: 'ambition for success.'</li><li><b>(D) of:</b> 'ambition of' কোনো নির্দিষ্ট বিষয় বা ফলাফলের আকাঙ্ক্ষা বোঝাতে ব্যবহৃত হয়, যেমন: 'ambition of becoming a doctor.' এখানে 'fame' (খ্যাতি) একটি নির্দিষ্ট ফলাফল।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "The convict appeared _ the court.",
+          options: {
+            a: "in",
+            b: "to",
+            c: "before",
+            d: "at",
+          },
+          correct: "c",
+          explanation:
+            "<p>কোনো আদালত বা বিচারকের সামনে উপস্থিত হওয়া বোঝাতে 'appear before' ব্যবহার করা হয়।</p><ul><li><b>(A) in:</b> 'in the court' মানে আদালতের মধ্যে থাকা, কিন্তু উপস্থিত হওয়া বোঝায় না।</li><li><b>(B) to:</b> 'to' সাধারণত গন্তব্য বা সম্পর্ক বোঝাতে ব্যবহৃত হয়।</li><li><b>(C) before:</b> যখন কোনো বিচারক বা আদালতের সামনে উপস্থিত হওয়া বোঝায়, তখন 'appear before' ব্যবহার করা হয়। উদাহরণস্বরূপ: 'He appeared before the judge.'</li><li><b>(D) at:</b> 'at' সাধারণত নির্দিষ্ট স্থান বোঝাতে ব্যবহৃত হয়, তবে আদালতের সামনে উপস্থিতি বোঝাতে 'before' অধিক উপযুক্ত।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
